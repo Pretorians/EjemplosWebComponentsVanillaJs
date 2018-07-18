@@ -1,0 +1,20 @@
+   <script>
+
+    let templatepolifill =`<style>div { background-color: #eb8b0e; color: #FFFFFF; padding: 1em;} </style>
+    <div>Hola Mensaje polifill</div>`;
+   
+     class Saludo extends HTMLElement {
+        
+      constructor () {
+        super();
+      }
+
+      connectedCallback () {
+        let shadowRoot = this.attachShadow({mode: 'open'});
+        shadowRoot.innerHTML = templatepolifill;
+      }
+    }   
+   
+    window.customElements.define('saludo-polihola', Saludo);
+
+   </script>

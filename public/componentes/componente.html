@@ -1,0 +1,230 @@
+<template id="ubigeo">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" 
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+<style>
+    /*-- Estilos Autocomplete --*/
+    .acom-contenido {
+        position: relative;
+        width: 100%;
+    }
+
+    .acom-input {
+        position: relative;
+    }
+
+    .acom-resultado {
+        position: absolute;
+        top: 100%;
+        left: 0px;
+        z-index: 100;
+    }
+
+    .acom-resultado-estilo {
+        background-color: white;
+        width: 100%;
+        margin-top: -4px;
+        border-radius: 0px 0px 8px 8px;
+        border: 1px;
+        border-color: #DDDDDD;
+        border-style: solid;
+        border-top: 0px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+
+    .acom-sugerencia {
+        padding: 0px 15px !important;
+        font-family: "BBVAWebBook-Regular" !important;
+        font-size: 13px !important;
+        outline: none !important;
+        color: #143F9F !important;
+        line-height: 24px !important;
+    }
+
+    .acom-sugerenciad {
+        padding: 0px 15px !important;
+        font-family: "BBVAWebBook-Regular" !important;
+        font-size: 13px !important;
+        outline: none !important;
+        color: #143F9F !important;
+        line-height: 24px !important;
+    }
+    .acom-sugerenciad:hover{
+        background: #c5cfe7 !important;
+        color: #2b2b2b;
+    }
+
+    .acom-sugerencia:hover {
+        background-color: #c5cfe7;
+        cursor: pointer;
+    }
+
+    .acom-sugerenciad:hover {
+        background-color: #c5cfe7;
+        cursor: pointer;
+    }
+</style>
+    <div class="acom-contenido">
+        <div id="formDireccion">
+            <input type="text" title="Residencia" id="txtDireccion"
+                name="txtDireccion" value=""
+                placeholder="Distrito de residencia"
+                class="form-control acom-input autocomplete-direccion" 
+                autocomplete="off" data-coddistrito="" data-codprovincia=""
+                data-coddepartamento="" data-ubigeoreniec=""
+                data-ubigeohost="" data-lleno="0"> <span
+                id="spanDireccion" class="text-danger" hidden="hidden">Ingresa
+                un distrito del Per&uacute;</span>
+        </div>
+        <div class="acom-resultado acom-resultado-estilo hidden">
+            <div id="acom-items"></div>
+        </div>
+    </div>
+</template>
+
+<script>
+        class Ubigeo extends HTMLElement {
+            constructor () {
+                super();
+                this.importDocument = (document._currentScript || document.currentScript).ownerDocument;                   
+            }
+
+            static get observedAttributes() {
+                return ['etiqueta','valor']; 
+            }
+
+            attributeChangedCallback(attr, oldValue, newValue) {
+                console.log(`${attr} cambio de ${oldValue} a ${newValue}!`);
+            }          
+
+            connectedCallback () {
+                let shadowRoot = this.attachShadow({mode: 'open'});
+                const t = this.importDocument.querySelector('#ubigeo');
+                const instance = t.content.cloneNode(true);
+                shadowRoot.appendChild(instance);
+                
+                this.etiqueta = this.getAttribute('etiqueta');
+                this.seccion = this.getAttribute('seccion');
+                this.valor = this.getAttribute('valor');
+
+                shadowRoot.querySelector('#txtDireccion').addEventListener('keyup', e => {
+                    this.buscarDistrito(shadowRoot.querySelector('#txtDireccion').value);
+                });             
+            }
+            
+            get etiqueta(){
+                return this._etiqueta;
+            }
+            set etiqueta(value){
+                this._etiqueta = value;
+                if(this.shadowRoot)
+                    this.shadowRoot.querySelector('#txtDireccion').setAttribute("placeholder",value);
+            }
+
+            get seccion(){
+                return this._seccion;
+            }
+            set seccion(value){
+                this._seccion = value;
+            }   
+            
+            get valor(){
+                return this._valor;
+            }
+            set valor(value){
+                this._valor = value;
+                this.setAttribute("valor",value); 
+            }
+
+            buscarDistrito(value){
+                let listaTemp = this.obtenerDatos();
+                let div_acom_items = this.shadowRoot.querySelector("#acom-items");
+		        let div_acom_resultado = div_acom_items.parentNode;
+                let listaDistritos = listaTemp.slice();
+                let htmlTemp = '';
+                let tamList = listaTemp.length <= 5 ? listaTemp.length : 5;
+                if (tamList > 0) {
+                    for (let i = 0; i < tamList; i++) {
+                        if (this.seccion == "datosRiesgo") {
+                            htmlTemp += '<div class="acom-sugerencia" data-coddistrito="' + listaTemp[i].codigoDistrito + '" data-codprovincia="' + listaTemp[i].codigoProvincia + '" data-coddepartamento="' + listaTemp[i].codigoDepartamento + '" data-ubigeoreniec="' + listaTemp[i].ubigeoReniec + '" data-ubigeohost="' + listaTemp[i].ubigeoHost + '">';
+                            htmlTemp += listaTemp[i].nombreDistrito + ', ' + listaTemp[i].nombreProvincia + ', ' + listaTemp[i].nombreDepartamento;
+                            htmlTemp += '</div>';
+                        } else if (this.seccion == "datosSolicitud") {
+                            htmlTemp += '<div class="acom-sugerenciad"  data-ubigeo="' + listaTemp[i].ubigeo + '">';
+                            htmlTemp += listaTemp[i].distrito + ', ' + listaTemp[i].provincia + ', ' + listaTemp[i].departamento + ' (' + listaTemp[i].count + ')';
+                            htmlTemp += '</div>';
+                        }
+                        listaDistritos.shift();
+                    }
+
+                    if (listaDistritos.length > 0) {
+                        if(this.section == "datosRiesgo"){
+                            htmlTemp += '<div class="acom-sugerencia more-5" onclick="autocompleteMasResultados()">';
+                        }else if(this.section == "datosSolicitud"){
+                            htmlTemp += '<div class="acom-sugerenciad more-5" onclick="autocompleteMasResultados()">';
+                        }
+                        htmlTemp += 'Mostrar ' + (listaDistritos.length < 5 ? listaDistritos.length : 5) + ' ' + (listaDistritos.length > 1 ? 'sugerencias' : 'sugerencia') + ' más.';
+                        htmlTemp += '</div>';
+                        
+                    }
+                } else {
+                    htmlTemp += '<div class="acom-no-result">';
+                    if (section == "datosSolicitud") {
+                        htmlTemp += "No contamos con oficinas en este distrito. Por favor, ingresa otro.";
+                    } else {
+                        htmlTemp += "No se encontraron resultados";
+                    }
+                    htmlTemp += '</div>';
+                }
+                div_acom_items.innerHTML = htmlTemp;
+                div_acom_resultado.classList.remove("hidden");
+
+                let listDist = this.shadowRoot.querySelectorAll('.acom-sugerencia');
+                for(let i=0; i<listDist.length; i++){
+                    listDist[i].addEventListener('click', e => {
+                        this.pintarDato(e.toElement);
+                    });   
+                }
+                /*
+                    this.shadowRoot.querySelector('.acom-sugerencia').addEventListener('click', e => {
+                        this.pintarDato(e.toElement);
+                    });   
+                */
+            }
+
+            obtenerDatos(){
+                let distrito1 = {"nombreDistrito":"Distrito1","nombreProvincia":"Provincia1","nombreDepartamento":"Departamento1",
+                                "codigoDistrito":"1","codigoProvincia":"1","codigoDepartamento":"1",
+                                "ubigeoReniec":"111","ubigeoHost":"111"};
+                let distrito2 = {"nombreDistrito":"Distrito2","nombreProvincia":"Provincia2","nombreDepartamento":"Departamento2",
+                                "codigoDistrito":"2","codigoProvincia":"2","codigoDepartamento":"2",
+                                "ubigeoReniec":"222","ubigeoHost":"222"};
+                let distrito3 = {"nombreDistrito":"Distrito3","nombreProvincia":"Provincia3","nombreDepartamento":"Departamento3",
+                                "codigoDistrito":"3","codigoProvincia":"3","codigoDepartamento":"3",
+                                "ubigeoReniec":"333","ubigeoHost":"333"};
+
+                let distritos = [distrito1,distrito2,distrito3];
+                return distritos;
+            }
+
+            pintarDato(item){
+                let div_acom_items = this.shadowRoot.querySelector("#acom-items");
+		        let div_acom_resultado = div_acom_items.parentNode;
+                let codDistrito = item.dataset.coddistrito;
+                let desUbigeo = item.innerHTML;
+                //console.log(codDistrito);
+                div_acom_resultado.classList.add("hidden");
+                this.valor = codDistrito;
+                this.shadowRoot.querySelector("#txtDireccion").value = desUbigeo;
+            }
+
+            agregarEventoDiv(elemntoDiv){
+                elemntoDiv.addEventListener('click', e => {
+                        this.pintarDato(e.toElement);
+                });
+            }
+        }
+        window.customElements.define('componente-ubigeo', Ubigeo);
+</script>

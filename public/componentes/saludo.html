@@ -1,0 +1,26 @@
+<template>
+    <style>
+        div {
+            background-color: #1e73be;
+            color: #FFFFFF;
+            padding: 1em;
+        }
+    </style>
+    <div>
+        Hola Mensaje
+    </div>
+   </template>
+   <script>
+    var prototipo = Object.create(HTMLElement.prototype);
+    var template = (document._currentScript || document.currentScript).ownerDocument.querySelector('template').content;
+   
+    prototipo.createdCallback = function() {
+        var clonTemplate = document.importNode(template, true);
+        this.createShadowRoot().appendChild(clonTemplate);
+    }
+   
+    document.registerElement('saludo-hola', {
+        prototype: prototipo
+    });
+
+   </script>

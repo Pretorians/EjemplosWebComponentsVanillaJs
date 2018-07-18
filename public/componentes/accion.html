@@ -1,0 +1,26 @@
+<template id="accion-futbol">
+    <style>
+            div {
+                background-color: #eb8b0e;
+                color: #FFFFFF;
+                padding: 1em;
+            }
+    </style>
+    <div>Inicio el Partido</div>
+</template>
+  <script>
+    class Accion extends HTMLElement {
+      constructor () {
+        super();
+        this.importDocument = (document._currentScript || document.currentScript).ownerDocument;
+      }
+
+      connectedCallback () {
+        let shadowRoot = this.attachShadow({mode: 'open'});
+        const t = this.importDocument.querySelector('#accion-futbol');
+        const instance = t.content.cloneNode(true);
+        shadowRoot.appendChild(instance);
+      }
+    }
+    window.customElements.define('accion-futbol', Accion);
+  </script>
